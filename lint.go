@@ -2,21 +2,24 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/mitchellh/colorstring"
 )
 
 func main() {
 	var parseErr int
+
+	parser := hclparse.NewParser()
+
 	if len(os.Args) == 2 && os.Args[1] == "-" {
-		bytes, err := ioutil.ReadAll(os.Stdin)
-		_, err = hcl.Parse(string(bytes))
-		if err != nil {
-			colorstring.Printf("[red]Error parsing stdin: %s\n", err)
+		bytes, _ := io.ReadAll(os.Stdin)
+		_, diag := parser.ParseHCL(bytes, "stdin")
+		if diag.HasErrors() {
+			colorstring.Printf("[red]Error parsing stdin: %s\n", diag.Error())
 			parseErr = 1
 		} else {
 			colorstring.Printf("[green]OK!\n")
@@ -36,14 +39,14 @@ func main() {
 			}
 			for _, filename := range files {
 				fmt.Printf("Checking %s ... ", filename)
-				file, err := ioutil.ReadFile(filename)
+				file, err := os.ReadFile(filename)
 				if err != nil {
 					colorstring.Printf("[red]Error reading file: %s\n", err)
 					break
 				}
-				_, err = hcl.Parse(string(file))
-				if err != nil {
-					colorstring.Printf("[red]Error parsing file: %s\n", err)
+				_, diag := parser.ParseHCL(file, filename)
+				if diag.HasErrors() {
+					colorstring.Printf("[red]Error parsing file: %s\n", diag.Error())
 					parseErr = 1
 					break
 				}
