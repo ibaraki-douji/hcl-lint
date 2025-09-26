@@ -39,6 +39,7 @@ hcl-lint [OPTIONS] [FILES/DIRECTORIES...]
 - `-v, --version`: Show version information and exit
 - `-r, --recursive`: Recursively search subdirectories for files
 - `-t, --type <extensions>`: File extensions to process (comma-separated, default: tf)
+- `-e, --exclude <patterns>`: Exclude patterns (comma-separated) - directories and files to skip (from the current directory)
 - `-`: Read HCL content from stdin
 
 ### Basic Usage
@@ -83,6 +84,20 @@ hcl-lint -r -t tf,hcl,tfvars ./project/
 hcl-lint main.tf ./modules ./environments
 ```
 
+#### Exclude specific directories and files
+```sh
+# Exclude a directory
+hcl-lint -r -e "tests/recursive" ./project/
+
+# Exclude multiple patterns (directories and files)
+hcl-lint -r -e "tests/recursive,.cache,dashboard/file.pp" ./project/
+
+# Exclude with specific file types
+hcl-lint -r -t tf,hcl -e ".git,node_modules,*.backup" ./project/
+```
+The exclude patterns are relative to the current directory.
+If you want to exclude folder `./a/b/c`, you need to use `-e "a/b/c"`, not `-e "c"` or `-e "b/c"`.
+
 ## Examples
 
 **Valid HCL file:**
@@ -111,6 +126,19 @@ Checking tests/valid.hcl ... OK!
 ```
 $ hcl-lint -t py tests/
 No .py files found in directory 'tests/'
+```
+
+**Using exclude patterns:**
+```
+$ hcl-lint -r -t tf,hcl -e "tests/recursive" tests/
+Checking tests/invalid.hcl ... Error parsing file: tests/invalid.hcl:13,1-2: Argument or block definition required; An argument or block definition is required here. To set an argument, use the equals sign "=" to introduce the argument value.
+Checking tests/valid.hcl ... OK!
+```
+
+**Excluding multiple patterns:**
+```
+$ hcl-lint -r -e "tests/recursive,.cache,dashboard/file.pp" ./project/
+# Only processes files not matching the exclude patterns
 ```
 
 ## Supported File Types

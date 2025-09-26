@@ -33,7 +33,7 @@ func processPath(parser *hclparse.Parser, path string, config Config) error {
 		return processDirectory(parser, path, config)
 	}
 
-	return processFile(parser, path)
+	return processFile(parser, path, config)
 }
 
 func processDirectory(parser *hclparse.Parser, dirPath string, config Config) error {
@@ -45,6 +45,15 @@ func processDirectory(parser *hclparse.Parser, dirPath string, config Config) er
 			if err != nil {
 				return err
 			}
+
+			// Check if this path is excluded
+			if isExcluded(path, config.Exclude) {
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
 			if !info.IsDir() && hasValidExtension(path, config.FileTypes) {
 				files = append(files, path)
 			}
@@ -79,7 +88,7 @@ func processDirectory(parser *hclparse.Parser, dirPath string, config Config) er
 
 	var hasError bool
 	for _, filename := range files {
-		if err := processFile(parser, filename); err != nil {
+		if err := processFile(parser, filename, config); err != nil {
 			hasError = true
 		}
 	}
@@ -91,7 +100,12 @@ func processDirectory(parser *hclparse.Parser, dirPath string, config Config) er
 	return nil
 }
 
-func processFile(parser *hclparse.Parser, filename string) error {
+func processFile(parser *hclparse.Parser, filename string, config Config) error {
+	// Check if file is excluded
+	if isExcluded(filename, config.Exclude) {
+		return nil
+	}
+
 	fmt.Printf("Checking %s ... ", filename)
 
 	file, err := os.ReadFile(filename)
@@ -140,4 +154,45 @@ func expandGlobs(args []string) ([]string, error) {
 	}
 
 	return expanded, nil
+}
+
+// isExcluded checks if the given path matches any of the exclude patterns
+func isExcluded(path string, excludePatterns []string) bool {
+	if len(excludePatterns) == 0 {
+		return false
+	}
+
+	// Clean the path to handle both relative and absolute paths consistently
+	cleanPath := filepath.Clean(path)
+
+	// Also check without the leading "./"
+	relPath := strings.TrimPrefix(cleanPath, "./")
+
+	for _, pattern := range excludePatterns {
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" {
+			continue
+		}
+
+		// Clean the pattern
+		cleanPattern := filepath.Clean(pattern)
+
+		// Check if the path exactly matches the pattern
+		if cleanPath == cleanPattern || relPath == cleanPattern {
+			return true
+		}
+
+		// Check if the path is under an excluded directory
+		if strings.HasPrefix(cleanPath+"/", cleanPattern+"/") ||
+			strings.HasPrefix(relPath+"/", cleanPattern+"/") {
+			return true
+		}
+
+		// For absolute paths, also check if the path starts with the pattern
+		if filepath.IsAbs(cleanPath) && strings.HasPrefix(cleanPath, "/"+cleanPattern) {
+			return true
+		}
+	}
+
+	return false
 }

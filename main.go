@@ -12,6 +12,7 @@ import (
 type Config struct {
 	Recursive bool
 	FileTypes []string
+	Exclude   []string
 }
 
 func main() {
@@ -23,6 +24,8 @@ func main() {
 		recursiveLong = flag.Bool("recursive", false, "recursively search subdirectories")
 		fileType      = flag.String("t", "tf", "file extensions to process (comma-separated, e.g., tf,hcl,tfvars)")
 		fileTypeLong  = flag.String("type", "tf", "file extensions to process (comma-separated, e.g., tf,hcl,tfvars)")
+		exclude       = flag.String("e", "", "exclude patterns (comma-separated, e.g., tests/recursive,.cache,dashboard/file.pp)")
+		excludeLong   = flag.String("exclude", "", "exclude patterns (comma-separated, e.g., tests/recursive,.cache,dashboard/file.pp)")
 		help          = flag.Bool("h", false, "show help")
 		helpLong      = flag.Bool("help", false, "show help")
 		version       = flag.Bool("v", false, "show version")
@@ -73,6 +76,13 @@ func main() {
 	}
 	config.FileTypes = parseFileTypes(fileTypeStr)
 
+	// Parse exclude patterns
+	excludeStr := *exclude
+	if *excludeLong != "" {
+		excludeStr = *excludeLong
+	}
+	config.Exclude = parseExcludePatterns(excludeStr)
+
 	// Expand globs
 	expandedArgs, err := expandGlobs(args)
 	if err != nil {
@@ -99,4 +109,15 @@ func parseFileTypes(typeStr string) []string {
 		types[i] = t
 	}
 	return types
+}
+
+func parseExcludePatterns(excludeStr string) []string {
+	if excludeStr == "" {
+		return nil
+	}
+	patterns := strings.Split(excludeStr, ",")
+	for i, pattern := range patterns {
+		patterns[i] = strings.TrimSpace(pattern)
+	}
+	return patterns
 }

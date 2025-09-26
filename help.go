@@ -24,6 +24,8 @@ OPTIONS:
     -r, --recursive         Recursively search subdirectories for files
     -t, --type <extensions> File extensions to process (comma-separated, default: tf)
                            Examples: tf, hcl, tfvars, tf,hcl, hcl,tfvars
+    -e, --exclude <patterns> Exclude patterns (comma-separated)
+                           Examples: tests/recursive, .cache, dashboard/file.pp
     -                       Read HCL content from stdin
 
 ARGUMENTS:
@@ -45,6 +47,9 @@ EXAMPLES:
 
     # Validate multiple file types recursively
     %s -r -t tf,hcl,tfvars ./project/
+
+    # Validate recursively but exclude specific directories and files
+    %s -r -e tests/recursive,.cache,dashboard/file.pp ./project/
 
     # Validate multiple files and directories
     %s main.tf ./modules variables.tf
