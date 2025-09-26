@@ -67,7 +67,7 @@ SUPPORTED FILE TYPES:
     - .tfvars (Terraform variable files)
     - Any file when explicitly specified (content will be parsed as HCL)
 
-`, os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0])
+`, os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0], os.Args[0])
 }
 
 func PrintVersion() {
